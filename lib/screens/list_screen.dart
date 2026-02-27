@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hwfefu/provider/provider.dart';
+import 'package:hwfefu/screens/details_screen.dart';
 import 'package:provider/provider.dart';
 
 class ListPage extends StatelessWidget {
@@ -14,27 +15,100 @@ class ListPage extends StatelessWidget {
         );
 
         return Padding(
-          padding: const EdgeInsets.all(10),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(15),
-            onTap: () {},
-            onLongPress: () {},
-            child: Container(
-              height: 65,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outline,
-                  width: 1,
+          padding: EdgeInsets.only(
+            top: 15,
+            left: 15,
+            right: 15,
+            bottom:
+                index ==
+                    context.watch<AppStateProvider>().listDataset.length - 1
+                ? 15
+                : 0,
+          ),
+          child: GestureDetector(
+            onLongPressStart: (details) {
+              final RenderObject overlay = Overlay.of(
+                context,
+              ).context.findRenderObject()!;
+              showMenu(
+                context: context,
+                position: RelativeRect.fromRect(
+                  Rect.fromLTWH(
+                    details.globalPosition.dx,
+                    details.globalPosition.dy,
+                    30,
+                    30,
+                  ),
+                  Rect.fromLTWH(
+                    0,
+                    0,
+                    overlay.paintBounds.size.width,
+                    overlay.paintBounds.size.height,
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(15),
+                items: [
+                  PopupMenuItem(
+                    child: Row(
+                      children: [
+                        Icon(Icons.star_border_outlined),
+                        SizedBox(width: 16),
+                        Text('Избранное'),
+                      ],
+                    ),
+                    onTap: () {
+                    },
+                  ),
+                  PopupMenuItem(
+                    child: Row(
+                      children: [
+                        Icon(Icons.share),
+                        SizedBox(width: 16),
+                        Text('Поделиться'),
+                      ],
+                    ),
+                    onTap: () {
+                    },
+                  ),
+                  PopupMenuItem(
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline),
+                        SizedBox(width: 16),
+                        Text('Открыть детали'),
+                      ],
+                    ),
+                    onTap: () {
+                    },
+                  ),
+                ],
+              );
+            },
+            child: InkWell(
+              borderRadius: BorderRadius.circular(15),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailsPage(listItem: listItem),
+                ),
               ),
-              child: Align(
-                alignment: .centerLeft,
-                child: Padding(
-                  padding: const EdgeInsetsGeometry.only(left: 15),
-                  child: Text(
-                    "${listItem.id} | ${listItem.name}",
-                    style: Theme.of(context).textTheme.bodyLarge,
+
+              child: Container(
+                height: 65,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Align(
+                  alignment: .centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsetsGeometry.only(left: 15),
+                    child: Text(
+                      "${listItem.id} | ${listItem.name}",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
                   ),
                 ),
               ),
@@ -94,6 +168,7 @@ class ListItem {
   late String type;
   late String dimension;
   late String created;
+  late List residents;
 
   ListItem.fromJson(Map json) {
     id = json["id"];
@@ -101,5 +176,6 @@ class ListItem {
     type = json["type"];
     dimension = json["dimension"];
     created = json["created"];
+    residents = json["residents"];
   }
 }
