@@ -1,27 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:hwfefu/provider/provider.dart';
+import 'package:hwfefu/data_types/data_types.dart';
 import 'package:hwfefu/screens/details_screen.dart';
+import 'package:hwfefu/state_manager/state_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
-class ListPage extends StatelessWidget {
-  const ListPage({super.key});
+class ListScreen extends StatelessWidget {
+  const ListScreen({super.key});
 
   Widget itemBuilder(BuildContext context) {
     return ListView.builder(
-      itemCount: context.watch<AppStateProvider>().listDataset.length,
+      itemCount: context.watch<StateManager>().itemList.length,
       itemBuilder: (context, index) {
-        ListItem listItem = ListItem.fromJson(
-          Provider.of<AppStateProvider>(context).listDataset[index],
-        );
-
+        LocationItem listItem = context.read<StateManager>().itemList[index];
         return Padding(
           padding: EdgeInsets.only(
             top: 15,
             left: 15,
             right: 15,
-            bottom:
-                index ==
-                    context.watch<AppStateProvider>().listDataset.length - 1
+            bottom: index == context.read<StateManager>().itemList.length - 1
                 ? 15
                 : 0,
           ),
@@ -50,12 +47,16 @@ class ListPage extends StatelessWidget {
                   PopupMenuItem(
                     child: Row(
                       children: [
-                        Icon(Icons.star_border_outlined),
+                        Icon(Icons.favorite),
                         SizedBox(width: 16),
-                        Text('Избранное'),
+                        Text('Add to Favorites'),
                       ],
                     ),
                     onTap: () {
+                      context.read<StateManager>().addFav(
+                        listItem.id,
+                        listItem.name,
+                      );
                     },
                   ),
                   PopupMenuItem(
@@ -63,10 +64,17 @@ class ListPage extends StatelessWidget {
                       children: [
                         Icon(Icons.share),
                         SizedBox(width: 16),
-                        Text('Поделиться'),
+                        Text('Share'),
                       ],
                     ),
                     onTap: () {
+                      SharePlus.instance.share(
+                        ShareParams(
+                          uri: Uri.parse(
+                            "https://rickandmortyapi.com/api/location/${listItem.id}",
+                          ),
+                        ),
+                      );
                     },
                   ),
                   PopupMenuItem(
@@ -74,10 +82,19 @@ class ListPage extends StatelessWidget {
                       children: [
                         Icon(Icons.info_outline),
                         SizedBox(width: 16),
-                        Text('Открыть детали'),
+                        Text('Open Details'),
                       ],
                     ),
                     onTap: () {
+                      context.read<StateManager>().getLocationDetails(
+                        listItem.id,
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailsScreen(),
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -85,12 +102,13 @@ class ListPage extends StatelessWidget {
             },
             child: InkWell(
               borderRadius: BorderRadius.circular(15),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailsPage(listItem: listItem),
-                ),
-              ),
+              onTap: () {
+                context.read<StateManager>().getLocationDetails(listItem.id);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => DetailsScreen()),
+                );
+              },
 
               child: Container(
                 height: 65,
@@ -133,8 +151,7 @@ class ListPage extends StatelessWidget {
         ),
         FilledButton.icon(
           onPressed: () {
-            context.read<AppStateProvider>().updateDatasetError(false);
-            context.read<AppStateProvider>().getList(context);
+            context.read<StateManager>().getLocationList();
           },
           label: Text("Try again"),
           icon: Icon(Icons.refresh_rounded),
@@ -144,7 +161,7 @@ class ListPage extends StatelessWidget {
   }
 
   Widget loadingData() {
-    return CircularProgressIndicator.adaptive();
+    return Center(child: CircularProgressIndicator.adaptive());
   }
 
   @override
@@ -152,30 +169,12 @@ class ListPage extends StatelessWidget {
     return Center(
       child: AnimatedSwitcher(
         duration: Duration(milliseconds: 200),
-        child: context.watch<AppStateProvider>().listDataset.isNotEmpty
+        child: context.watch<StateManager>().itemListStatusCode == 200
             ? itemBuilder(context)
-            : context.watch<AppStateProvider>().isDatasetError
+            : context.watch<StateManager>().itemListStatusCode != 0
             ? datasetError(context)
             : loadingData(),
       ),
     );
-  }
-}
-
-class ListItem {
-  late int id;
-  late String name;
-  late String type;
-  late String dimension;
-  late String created;
-  late List residents;
-
-  ListItem.fromJson(Map json) {
-    id = json["id"];
-    name = json["name"];
-    type = json["type"];
-    dimension = json["dimension"];
-    created = json["created"];
-    residents = json["residents"];
   }
 }
